@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
-
+import random
+import math
 
 class game(object):
 
@@ -37,6 +38,8 @@ class game(object):
 
         self.currplayer = Label(t, text="Click the Play Button:", height=2,
                                 font=("COMIC SANS MS", 10, "bold"), bg="white")
+        self.available_moves = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        self.winner = None
 
     def showBoard(self):
 
@@ -87,7 +90,9 @@ class game(object):
 
         self.reset_b = Button(t, text="Reset", font=("COMIC SANS MS", 10),
                               height=1, width=7, bg="gray85", command=lambda: self.reset(t))
-
+        self.winner = None
+        self.available_moves = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        self.make_move(t)
         self.showBoard()
 
     def b_click(self, b, x, y, t):
@@ -101,6 +106,9 @@ class game(object):
             self.currplayer = Label(t, text="PLAYER 2(O)'s Move:", height=2,
                                     font=("COMIC SANS MS", 10, "bold"), bg="white")
             self.currplayer.grid(row=0, column=0)
+            #print(self.available_moves)
+            self.available_moves.remove(x * 3 + y)
+            #print(self.available_moves)
         elif b["text"] == " " and self.clicked == False:
             b["text"] = "O"
             self.clicked = True
@@ -110,6 +118,9 @@ class game(object):
             self.currplayer = Label(t, text="PLAYER 1(X)'s Move:", height=2,
                                     font=("COMIC SANS MS", 10, "bold"), bg="white")
             self.currplayer.grid(row=0, column=0)
+            self.available_moves.remove(x * 3 + y)
+            self.make_move(t)
+
         else:
             messagebox.showerror("Tic Tac Toe", "please select another box!")
 
@@ -123,6 +134,7 @@ class game(object):
             self.currplayer = Label(t, text="PLAYER 1(X) won", height=2,
                                     font=("COMIC SANS MS", 10, "bold"), bg="white")
             self.currplayer.grid(row=0, column=0)
+            self.winner = 'X'
             self.disable_all_buttons()
 
         elif (board[0][0] == board[0][1] == board[0][2] == "O" or board[1][0] == board[1][1] == board[1][2] == "O" or board[2][0] == board[2][1] == board[2][2] == "O" or
@@ -133,6 +145,7 @@ class game(object):
             self.currplayer = Label(t, text="PLAYER 2(O) won", height=2,
                                     font=("COMIC SANS MS", 10, "bold"), bg="white")
             self.currplayer.grid(row=0, column=0)
+            self.winner = 'O'
             self.disable_all_buttons()
 
         elif self.count == 9:
@@ -141,6 +154,20 @@ class game(object):
                                     font=("COMIC SANS MS", 10, "bold"), bg="white")
             self.currplayer.grid(row=0, column=0)
             self.disable_all_buttons()
+
+    def minimaxIfWin(self):
+        board = self.board
+        if (board[0][0] == board[0][1] == board[0][2] == "X" or board[1][0] == board[1][1] == board[1][2] == "X" or board[2][0] == board[2][1] == board[2][2] == "X" or
+            board[0][0] == board[1][0] == board[2][0] == "X" or board[0][1] == board[1][1] == board[2][1] == "X" or board[0][2] == board[1][2] == board[2][2] == "X" or
+                board[0][0] == board[1][1] == board[2][2] == "X" or board[0][2] == board[1][1] == board[2][0] == "X"):
+
+            self.winner = 'X'
+
+        elif (board[0][0] == board[0][1] == board[0][2] == "O" or board[1][0] == board[1][1] == board[1][2] == "O" or board[2][0] == board[2][1] == board[2][2] == "O" or
+              board[0][0] == board[1][0] == board[2][0] == "O" or board[0][1] == board[1][1] == board[2][1] == "O" or board[0][2] == board[1][2] == board[2][2] == "O" or
+              board[0][0] == board[1][1] == board[2][2] == "O" or board[0][2] == board[1][1] == board[2][0] == "O"):
+
+            self.winner = 'O'
 
     def disable_all_buttons(self):
         self.b1.config(state=DISABLED)
@@ -152,3 +179,95 @@ class game(object):
         self.b7.config(state=DISABLED)
         self.b8.config(state=DISABLED)
         self.b9.config(state=DISABLED)
+        
+    def get_available_moves_num(self):
+        count = 0
+        for x in self.board:
+            for y in x:
+                if y == " ":
+                    count += 1
+        return count
+
+    # Minimax AI
+    def get_move(self):
+
+        if len(self.available_moves) == 9:
+            square = random.randint(1, 8)
+        else:
+            d = self.minimax('X')
+            square = d['position']
+            print(d)
+        return square
+
+    def minimax(self, player):
+        max_player = 'X'
+        other_player = 'O' if player == 'X' else 'X'
+        #print(self.available_moves)
+        # base case
+        if self.winner == other_player:
+            return {'position': None,
+                    'score': 1 * (self.get_available_moves_num() + 1) if other_player == max_player else -1 * (
+                        self.get_available_moves_num() + 1)
+                    }
+        elif not self.get_available_moves_num(): #draw
+            return {'position': None,
+                    'score': 0
+                    }
+        
+        if player == max_player:
+            best = {'position': None, 'score': -math.inf}
+        else:
+            best = {'position': None, 'score': math.inf}
+
+        old_avail_moves = self.available_moves.copy()
+        for possible_move in old_avail_moves:
+            # make the move on the game state (board array)
+            x = int(possible_move / 3)
+            y = possible_move - x * 3
+            #print(x)
+            #print(y)
+            self.board[x][y] = player
+            self.available_moves.remove(possible_move)
+            self.minimaxIfWin()
+            new_score = self.minimax(other_player)
+
+            # undo the move
+            self.board[x][y] = ' '
+            self.winner = None
+            self.available_moves = old_avail_moves.copy()
+            new_score['position'] = possible_move
+           
+            # replace scores if needed
+            if player == max_player:
+                if new_score['score'] > best['score']:
+                    best = new_score
+            else:
+                if new_score['score'] < best['score']:
+                    best = new_score
+
+
+        return best
+
+    def make_move(self, t):
+        move = self.get_move()
+        print(move)
+        x = int(move / 3)
+        y = move - x * 3
+        if move == 0:
+            self.b_click(self.b1, x, y, t)
+        elif move == 1:
+            self.b_click(self.b2, x, y, t)
+        elif move == 2:
+            self.b_click(self.b3, x, y, t)
+        elif move == 3:
+            self.b_click(self.b4, x, y, t)
+        elif move == 4:
+            self.b_click(self.b5, x, y, t)
+        elif move == 5:
+            self.b_click(self.b6, x, y, t)
+        elif move == 6:
+            self.b_click(self.b7, x, y, t)
+        elif move == 7:
+            self.b_click(self.b8, x, y, t)
+        elif move == 8:
+            self.b_click(self.b9, x, y, t)
