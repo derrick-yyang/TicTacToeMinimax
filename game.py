@@ -92,7 +92,7 @@ class game(object):
                               height=1, width=7, bg="gray85", command=lambda: self.reset(t))
         self.winner = None
         self.available_moves = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        self.make_move(t)
+        #self.make_move(t)
         self.showBoard()
 
     def b_click(self, b, x, y, t):
@@ -109,6 +109,7 @@ class game(object):
             #print(self.available_moves)
             self.available_moves.remove(x * 3 + y)
             #print(self.available_moves)
+            self.make_move(t)
         elif b["text"] == " " and self.clicked == False:
             b["text"] = "O"
             self.clicked = True
@@ -119,7 +120,7 @@ class game(object):
                                     font=("COMIC SANS MS", 10, "bold"), bg="white")
             self.currplayer.grid(row=0, column=0)
             self.available_moves.remove(x * 3 + y)
-            self.make_move(t)
+            #self.make_move(t)
 
         else:
             messagebox.showerror("Tic Tac Toe", "please select another box!")
@@ -194,13 +195,13 @@ class game(object):
         if len(self.available_moves) == 9:
             square = random.randint(1, 8)
         else:
-            d = self.minimax('X')
+            d = self.minimax('O')
             square = d['position']
             print(d)
         return square
 
     def minimax(self, player):
-        max_player = 'X'
+        max_player = 'O'
         other_player = 'O' if player == 'X' else 'X'
         #print(self.available_moves)
         # base case
